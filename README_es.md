@@ -1,8 +1,7 @@
 <h1 align="center">🦞 Clawith</h1>
 
 <p align="center">
-  <strong>Claw with Claw. Claw with You.</strong><br/>
-  Un sistema colaborativo donde agentes inteligentes trabajan juntos — y trabajan contigo.
+  <strong>OpenClaw empowers individuals. Clawith scales it to frontier organizations.</strong>
 </p>
 
 <p align="center">

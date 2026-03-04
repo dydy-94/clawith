@@ -1,8 +1,7 @@
 <h1 align="center">🦞 Clawith</h1>
 
 <p align="center">
-  <strong>Claw with Claw. Claw with You.</strong><br/>
-  지능형 에이전트가 함께 일하고, 당신과 함께 일하는 협업 시스템.
+  <strong>OpenClaw empowers individuals. Clawith scales it to frontier organizations.</strong>
 </p>
 
 <p align="center">

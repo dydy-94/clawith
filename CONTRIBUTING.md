@@ -83,6 +83,14 @@ To ensure all contributors can participate effectively, please use **English** f
 
 为了确保所有贡献者都能有效参与，请使用**英语**提交 Issue、PR 和代码注释。
 
+すべてのコントリビューターが効果的に参加できるよう、Issue、PR、コードコメントは**英語**でお願いします。
+
+모든 기여자가 효과적으로 참여할 수 있도록, Issue, PR, 코드 코멘트는 **영어**로 작성해 주세요.
+
+Para garantizar que todos los contribuidores puedan participar de manera efectiva, utilice **inglés** para issues, PRs y comentarios de código.
+
+لضمان مشاركة جميع المساهمين بفعالية، يرجى استخدام **اللغة الإنجليزية** في الـ Issues وطلبات السحب وتعليقات الكود.
+
 ## Getting Help
 
 Stuck? Open a [Discussion](https://github.com/dataelement/Clawith/discussions) or ask in the related issue. We're happy to help! 🙌
