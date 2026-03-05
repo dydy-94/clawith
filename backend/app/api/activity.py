@@ -142,6 +142,39 @@ async def list_conversations(
             "last_at": last_at.isoformat() if last_at else None,
         })
 
+    # 1c. Slack conversations
+    for prefix, icon, label in [("slack_", "💬", "Slack"), ("discord_", "🎮", "Discord")]:
+        ch_convs_q = await db.execute(
+            select(
+                ChatMessage.conversation_id,
+                func.max(ChatMessage.created_at).label("last_at"),
+                func.count(ChatMessage.id).label("cnt"),
+            )
+            .where(ChatMessage.agent_id == agent_id, ChatMessage.conversation_id.like(f"{prefix}%"))
+            .group_by(ChatMessage.conversation_id)
+        )
+        for row in ch_convs_q.fetchall():
+            conv_id, last_at, cnt = row
+            last_msg_r = await db.execute(
+                select(ChatMessage.content)
+                .where(ChatMessage.agent_id == agent_id, ChatMessage.conversation_id == conv_id)
+                .order_by(ChatMessage.created_at.desc()).limit(1)
+            )
+            last_content = last_msg_r.scalar_one_or_none() or ""
+            # Build a readable name from conv_id e.g. slack_C123_U456 → Slack C123
+            parts = conv_id.split("_", 2)
+            channel_part = parts[1] if len(parts) > 1 else conv_id
+            display_name = f"{icon} {label} #{channel_part}" if channel_part != "dm" else f"{icon} {label} DM"
+            conversations.append({
+                "conv_id": conv_id,
+                "partner_type": prefix.rstrip("_"),
+                "partner_id": conv_id,
+                "partner_name": display_name,
+                "last_message": last_content[:80],
+                "message_count": cnt,
+                "last_at": last_at.isoformat() if last_at else None,
+            })
+
     # 2. Agent-to-agent conversations (from Message table)
     # Messages where this agent is sender OR receiver
     agent_partners = set()
@@ -214,7 +247,7 @@ async def get_conversation_messages(
 
     messages = []
 
-    if conv_id.startswith("web_") or conv_id.startswith("feishu_"):
+    if conv_id.startswith("web_") or conv_id.startswith("feishu_") or conv_id.startswith("slack_") or conv_id.startswith("discord_"):
         from app.models.audit import ChatMessage
         result = await db.execute(
             select(ChatMessage)
