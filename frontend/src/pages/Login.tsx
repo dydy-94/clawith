@@ -86,7 +86,8 @@ export default function Login() {
                         Open Source · Multi-Agent Collaboration
                     </div>
                     <h1 className="login-hero-title">
-                        Clawith — OpenClaw for Teams
+                        Clawith<br />
+                        <span style={{ fontSize: '0.65em', fontWeight: 600, opacity: 0.85 }}>OpenClaw for Teams</span>
                     </h1>
                     <p className="login-hero-desc">
                         OpenClaw empowers individuals.<br />
