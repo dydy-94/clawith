@@ -559,7 +559,7 @@ export default function AgentDetail() {
             const msgs = await res.json();
             if (sess.user_id === String(currentUser?.id)) {
                 // Own session: load into chatMessages so WS can append new replies seamlessly
-                setChatMessages(msgs.map((m: any) => ({
+                setChatMessages(msgs.map((m: any) => parseChatMsg({
                     role: m.role, content: m.content,
                     ...(m.toolName && { toolName: m.toolName, toolArgs: m.toolArgs, toolStatus: m.toolStatus, toolResult: m.toolResult }),
                 })));
@@ -652,16 +652,21 @@ export default function AgentDetail() {
     // Load chat history + connect websocket when chat tab is active
     const parseChatMsg = (msg: ChatMsg): ChatMsg => {
         if (msg.role !== 'user') return msg;
-        // New format: [file:name.pdf]\ncontent
+        // Standard web chat format: [file:name.pdf]\ncontent
         const newFmt = msg.content.match(/^\[file:([^\]]+)\]\n?/);
-        if (newFmt) return { ...msg, fileName: newFmt[1], content: msg.content.slice(newFmt[0].length) || `\u2307 ${newFmt[1]}` };
+        if (newFmt) return { ...msg, fileName: newFmt[1], content: msg.content.slice(newFmt[0].length).trim() };
+        // Feishu/Slack channel format: [\u6587\u4ef6\u5df2\u4e0a\u4f20: workspace/uploads/name]
+        const chanFmt = msg.content.match(/^\[\u6587\u4ef6\u5df2\u4e0a\u4f20: (?:workspace\/uploads\/)?([^\]\n]+)\]/);
+        if (chanFmt) {
+            const raw = chanFmt[1]; const fileName = raw.split('/').pop() || raw;
+            return { ...msg, fileName, content: msg.content.slice(chanFmt[0].length).trim() };
+        }
         // Old format: [File: name.pdf]\nFile location:...\nQuestion: user_msg
         const oldFmt = msg.content.match(/^\[File: ([^\]]+)\]/);
         if (oldFmt) {
             const fileName = oldFmt[1];
             const qMatch = msg.content.match(/\nQuestion: ([\s\S]+)$/);
-            const content = qMatch ? qMatch[1].trim() : `\u2307 ${fileName}`;
-            return { ...msg, fileName, content };
+            return { ...msg, fileName, content: qMatch ? qMatch[1].trim() : '' };
         }
         return msg;
     };
@@ -1887,7 +1892,22 @@ export default function AgentDetail() {
                                             <div key={i} style={{ display: 'flex', flexDirection: m.role === 'assistant' ? 'row' : 'row-reverse', gap: '8px', marginBottom: '8px' }}>
                                                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: m.role === 'assistant' ? 'var(--bg-elevated)' : 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', flexShrink: 0, color: 'var(--text-secondary)', fontWeight: 600 }}>{m.role === 'assistant' ? 'A' : 'U'}</div>
                                                 <div style={{ maxWidth: '70%', padding: '8px 12px', borderRadius: '12px', background: m.role === 'assistant' ? 'var(--bg-secondary)' : 'rgba(16,185,129,0.1)', fontSize: '13px', lineHeight: '1.5', wordBreak: 'break-word' }}>
-                                                    {m.role === 'assistant' ? <MarkdownRenderer content={m.content} /> : <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>}
+                                                    {(() => {
+                                                        const pm = parseChatMsg({ role: m.role as ChatMsg['role'], content: m.content || '' });
+                                                        const fe = pm.fileName?.split('.').pop()?.toLowerCase() ?? '';
+                                                        const fi = fe === 'pdf' ? '📄' : (fe === 'csv' || fe === 'xlsx' || fe === 'xls') ? '📊' : (fe === 'docx' || fe === 'doc') ? '📝' : '📎';
+                                                        return (
+                                                            <>
+                                                                {pm.fileName && (
+                                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'var(--bg-elevated)', borderRadius: '6px', padding: '4px 8px', marginBottom: pm.content ? '4px' : '0', fontSize: '11px', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                                                                        <span>{fi}</span>
+                                                                        <span style={{ fontWeight: 500, color: 'var(--text-primary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pm.fileName}</span>
+                                                                    </div>
+                                                                )}
+                                                                {pm.content ? (m.role === 'assistant' ? <MarkdownRenderer content={pm.content} /> : <div style={{ whiteSpace: 'pre-wrap' }}>{pm.content}</div>) : null}
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </div>
                                         );
@@ -1924,8 +1944,12 @@ export default function AgentDetail() {
                                                 <div key={i} style={{ display: 'flex', flexDirection: msg.role === 'assistant' ? 'row' : 'row-reverse', gap: '8px', marginBottom: '8px' }}>
                                                     <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: msg.role === 'assistant' ? 'var(--bg-elevated)' : 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', flexShrink: 0, color: 'var(--text-secondary)', fontWeight: 600 }}>{msg.role === 'user' ? 'U' : 'A'}</div>
                                                     <div style={{ maxWidth: '70%', padding: '8px 12px', borderRadius: '12px', background: msg.role === 'assistant' ? 'var(--bg-secondary)' : 'rgba(16,185,129,0.1)', fontSize: '13px', lineHeight: '1.5', wordBreak: 'break-word' }}>
-                                                        {msg.fileName && <div style={{ fontSize: '10px', color: 'var(--accent)', marginBottom: '2px' }}>⌇ {msg.fileName}</div>}
-                                                        {msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>}
+                                                        {msg.fileName && (() => {
+                                                            const fe = msg.fileName!.split('.').pop()?.toLowerCase() ?? '';
+                                                            const fi = fe === 'pdf' ? '📄' : (fe === 'csv' || fe === 'xlsx' || fe === 'xls') ? '📊' : (fe === 'docx' || fe === 'doc') ? '📝' : '📎';
+                                                            return (<div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(0,0,0,0.08)', borderRadius: '6px', padding: '4px 8px', marginBottom: msg.content ? '4px' : '0', fontSize: '11px', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}><span>{fi}</span><span style={{ fontWeight: 500, color: 'var(--text-primary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.fileName}</span></div>);
+                                                        })()}
+                                                        {msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : msg.content ? <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div> : null}
                                                     </div>
                                                 </div>
                                             );

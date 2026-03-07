@@ -323,7 +323,7 @@ async def slack_event_webhook(
 
     if _file_user_messages and not user_text:
         # Files downloaded, no text — store file paths as user message & send ack
-        _file_content = " ".join(f"[文件已上传: {p}]" for p in _file_user_messages)
+        _file_content = " ".join(f"[file:{p.split('/')[-1]}]" for p in _file_user_messages)
         db.add(ChatMessage(agent_id=agent_id, user_id=platform_user_id, role="user",
                            content=_file_content, conversation_id=session_conv_id))
         await _asyncio.sleep(_random.uniform(1.0, 2.0))
@@ -338,7 +338,7 @@ async def slack_event_webhook(
 
     # Append uploaded file paths to user message for context
     if _file_user_messages and user_text:
-        user_text += "\n" + " ".join(f"[文件已上传: {p}]" for p in _file_user_messages)
+        user_text += "\n" + " ".join(f"[file:{p.split('/')[-1]}]" for p in _file_user_messages)
 
     # Save user message
     db.add(ChatMessage(agent_id=agent_id, user_id=platform_user_id, role="user", content=user_text, conversation_id=session_conv_id))

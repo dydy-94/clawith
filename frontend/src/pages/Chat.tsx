@@ -80,19 +80,23 @@ export default function Chat() {
         enabled: !!id,
     });
 
-    // Parse message content that may include file prefixes from saved history
     const parseMessage = (msg: Message): Message => {
         if (msg.role !== 'user') return msg;
-        // New format: [file:name.pdf]\ncontent (added by our fix)
+        // Standard web chat format: [file:name.pdf]\ncontent
         const newFmt = msg.content.match(/^\[file:([^\]]+)\]\n?/);
-        if (newFmt) return { ...msg, fileName: newFmt[1], content: msg.content.slice(newFmt[0].length) || `\u2307 ${newFmt[1]}` };
+        if (newFmt) return { ...msg, fileName: newFmt[1], content: msg.content.slice(newFmt[0].length).trim() };
+        // Feishu/Slack channel format: [\u6587\u4ef6\u5df2\u4e0a\u4f20: workspace/uploads/name]
+        const chanFmt = msg.content.match(/^\[\u6587\u4ef6\u5df2\u4e0a\u4f20: (?:workspace\/uploads\/)?([^\]\n]+)\]/);
+        if (chanFmt) {
+            const raw = chanFmt[1]; const fileName = raw.split('/').pop() || raw;
+            return { ...msg, fileName, content: msg.content.slice(chanFmt[0].length).trim() };
+        }
         // Old format: [File: name.pdf]\nFile location:...\nQuestion: user_msg
         const oldFmt = msg.content.match(/^\[File: ([^\]]+)\]/);
         if (oldFmt) {
             const fileName = oldFmt[1];
             const qMatch = msg.content.match(/\nQuestion: ([\s\S]+)$/);
-            const content = qMatch ? qMatch[1].trim() : `\u2307 ${fileName}`;
-            return { ...msg, fileName, content };
+            return { ...msg, fileName, content: qMatch ? qMatch[1].trim() : '' };
         }
         return msg;
     };
@@ -299,11 +303,11 @@ export default function Chat() {
                                 {msg.role === 'user' ? Icons.user : Icons.bot}
                             </div>
                             <div className="chat-bubble">
-                                {msg.fileName && (
-                                    <div style={{ fontSize: '11px', color: 'var(--accent-text)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <span style={{ display: 'flex' }}>{Icons.clip}</span> {msg.fileName}
-                                    </div>
-                                )}
+                                {msg.fileName && (() => {
+                                    const fe = msg.fileName!.split('.').pop()?.toLowerCase() ?? '';
+                                    const fi = fe === 'pdf' ? '\uD83D\uDCC4' : (fe === 'csv' || fe === 'xlsx' || fe === 'xls') ? '\uD83D\uDCCA' : (fe === 'docx' || fe === 'doc') ? '\uD83D\uDCDD' : '\uD83D\uDCCE';
+                                    return (<div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(0,0,0,0.08)', borderRadius: '6px', padding: '4px 8px', marginBottom: msg.content ? '4px' : '0', fontSize: '11px', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}><span>{fi}</span><span style={{ fontWeight: 500, color: 'var(--text-primary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.fileName}</span></div>);
+                                })()}
                                 {msg.toolCalls && msg.toolCalls.length > 0 && (
                                     <details style={{
                                         marginBottom: '8px', fontSize: '12px',

@@ -540,7 +540,7 @@ async def _handle_feishu_file(db, agent_id, config, message, sender_open_id, cha
         session_conv_id = str(_sess.id)
 
         # Store user message as file path
-        user_msg_content = f"[文件已上传: workspace/uploads/{filename}]"
+        user_msg_content = f"[file:{filename}]"
         db.add(ChatMessage(agent_id=agent_id, user_id=platform_user_id, role="user",
                            content=user_msg_content, conversation_id=session_conv_id))
         _sess.last_message_at = _dt.now(_tz.utc)
