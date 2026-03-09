@@ -28,11 +28,7 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: ./backend
-      args:
-        CLAWITH_PIP_INDEX_URL: ${CLAWITH_PIP_INDEX_URL:-}
-        CLAWITH_PIP_TRUSTED_HOST: ${CLAWITH_PIP_TRUSTED_HOST:-}
+    image: clawith:backend
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://clawith:clawith@postgres:5432/clawith
@@ -45,14 +41,11 @@ services:
       FEISHU_APP_ID: ${FEISHU_APP_ID:-}
       FEISHU_APP_SECRET: ${FEISHU_APP_SECRET:-}
       DOCKER_NETWORK: clawith_network
-      SS_CONFIG_FILE: /data/ss-nodes.json
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
       - agent_data:/data/agents
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./ss-nodes.json:/data/ss-nodes.json:ro
     depends_on:
       postgres:
         condition: service_healthy
