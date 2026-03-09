@@ -263,6 +263,14 @@ async def get_agent_metrics(
     _pending_approvals = pending_approvals.scalar() or 0
     _recent_actions = recent_actions.scalar() or 0
 
+    # Extract scalar values before any operation (prevent result closure issue)
+    total_tasks_count = total_tasks.scalar() or 0
+    done_tasks_count = done_tasks.scalar() or 0
+    pending_tasks_count = pending_tasks.scalar() or 0
+    total_approvals_count = total_approvals.scalar() or 0
+    pending_approvals_count = pending_approvals.scalar() or 0
+    recent_actions_count = recent_actions.scalar() or 0
+
     return {
         "agent_id": str(agent_id),
         "agent_name": agent.name,
