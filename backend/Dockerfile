@@ -36,7 +36,11 @@ COPY . .
 # Non-root user
 RUN useradd --create-home clawith && \
     mkdir -p /data/agents && \
-    chown -R clawith:clawith /app /data
+    chown -R clawith:clawith /app /data 
+
+USER root   
+RUN chmod +x /app/*
+
 USER clawith
 
 # Health check
