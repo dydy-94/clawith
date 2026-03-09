@@ -165,22 +165,23 @@ class AgentManager:
         # Assign a unique port
         container_port = 18789 + hash(str(agent.id)) % 10000
 
+        # Create container
         try:
             container = self.docker_client.containers.run(
-                settings.OPENCLAW_IMAGE,
-                detach=True,
-                name=f"clawith-agent-{str(agent.id)[:8]}",
-                network=settings.DOCKER_NETWORK,
-                ports={f"{settings.OPENCLAW_GATEWAY_PORT}/tcp": container_port},
+                settings.OPENCLAW_IMAGE, # image name
+                detach=True,  # 后台运行
+                name=f"clawith-agent-{str(agent.id)[:8]}",  # 容器名
+                network=settings.DOCKER_NETWORK,  # 网络： clawith_network
+                ports={f"{settings.OPENCLAW_GATEWAY_PORT}/tcp": container_port}, # port mapping
                 volumes={
-                    str(agent_dir): {"bind": "/home/node/.openclaw", "mode": "rw"},
+                    str(agent_dir): {"bind": "/home/node/.openclaw", "mode": "rw"},  # volume mount
                 },
                 environment={
-                    "OPENCLAW_GATEWAY_TOKEN": str(uuid.uuid4()),
+                    "OPENCLAW_GATEWAY_TOKEN": str(uuid.uuid4()), # environment
                 },
-                restart_policy={"Name": "unless-stopped"},
+                restart_policy={"Name": "unless-stopped"},  # restart policy
                 labels={
-                    "clawith.agent_id": str(agent.id),
+                    "clawith.agent_id": str(agent.id), # labels
                     "clawith.agent_name": agent.name,
                 },
             )
