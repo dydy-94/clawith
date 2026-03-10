@@ -255,13 +255,13 @@ async def get_agent_metrics(
     from app.services.agent_manager import agent_manager
     container_status = agent_manager.get_container_status(agent)
 
-    # Extract scalar values before any operation (prevent result closure issue)
-    total_tasks_count = total_tasks.scalar() or 0
-    done_tasks_count = done_tasks.scalar() or 0
-    pending_tasks_count = pending_tasks.scalar() or 0
-    total_approvals_count = total_approvals.scalar() or 0
-    pending_approvals_count = pending_approvals.scalar() or 0
-    recent_actions_count = recent_actions.scalar() or 0
+    # Extract scalar values (each result can only be consumed once)
+    _total_tasks = total_tasks.scalar() or 0
+    _done_tasks = done_tasks.scalar() or 0
+    _pending_tasks = pending_tasks.scalar() or 0
+    _total_approvals = total_approvals.scalar() or 0
+    _pending_approvals = pending_approvals.scalar() or 0
+    _recent_actions = recent_actions.scalar() or 0
 
     return {
         "agent_id": str(agent_id),
@@ -275,18 +275,18 @@ async def get_agent_metrics(
             "limit_month": agent.max_tokens_per_month,
         },
         "tasks": {
-            "total": total_tasks_count,
-            "done": done_tasks_count,
-            "pending": pending_tasks_count,
+            "total": _total_tasks,
+            "done": _done_tasks,
+            "pending": _pending_tasks,
             "completion_rate": round(
-                done_tasks_count / max(total_tasks_count or 1, 1) * 100, 1
+                _done_tasks / max(_total_tasks, 1) * 100, 1
             ),
         },
         "approvals": {
-            "total": total_approvals_count,
-            "pending": pending_approvals_count,
+            "total": _total_approvals,
+            "pending": _pending_approvals,
         },
         "activity": {
-            "actions_last_24h": recent_actions_count,
+            "actions_last_24h": _recent_actions,
         },
     }
