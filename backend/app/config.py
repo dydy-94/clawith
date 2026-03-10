@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     DOCKER_NETWORK: str = "clawith_network"
     OPENCLAW_IMAGE: str = "openclaw:local"
     OPENCLAW_GATEWAY_PORT: int = 18789
+    OPENCLAW_COMMAND: str = "node openclaw.mjs gateway --allow-unconfigured"
 
     # Feishu OAuth
     FEISHU_APP_ID: str = ""

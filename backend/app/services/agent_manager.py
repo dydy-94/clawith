@@ -168,9 +168,10 @@ class AgentManager:
         # Create container
         try:
             container = self.docker_client.containers.run(
-                settings.OPENCLAW_IMAGE, # image name
-                detach=True,  # 后台运行
-                name=f"clawith-agent-{str(agent.id)[:8]}",  # 容器名
+                settings.OPENCLAW_IMAGE,
+                detach=True,
+                command=settings.OPENCLAW_COMMAND,
+                name=f"clawith-agent-{str(agent.id)[:8]}",
                 network=settings.DOCKER_NETWORK,  # 网络： clawith_network
                 ports={f"{settings.OPENCLAW_GATEWAY_PORT}/tcp": container_port}, # port mapping
                 volumes={
