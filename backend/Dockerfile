@@ -40,6 +40,7 @@ RUN useradd --create-home clawith && \
 
 USER root   
 RUN chmod +x /app/*
+RUN chown -R 1000:1000 /data/agents
 
 USER clawith
 

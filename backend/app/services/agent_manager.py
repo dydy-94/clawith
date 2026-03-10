@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import shutil
 import uuid
 from datetime import datetime, timezone
@@ -59,6 +60,17 @@ class AgentManager:
             (agent_dir / "memory").mkdir(exist_ok=True)
             (agent_dir / "skills").mkdir(exist_ok=True)
             (agent_dir / "tasks.json").write_text("[]", encoding="utf-8")
+
+            # change agent directory ownership to 1000:1000
+            try:
+                for root, dirs, files in os.walk(agent_dir):
+                    os.chown(root, 1000, 1000)
+                    for d in dirs:
+                        os.chown(os.path.join(root, d), 1000, 1000)
+                    for f in files:
+                        os.chown(os.path.join(root, f), 1000, 1000)
+            except Exception as e:
+                logger.warning(f"Failed to chown agent dir: {e}")
 
         # Customize soul.md
         soul_path = agent_dir / "soul.md"
